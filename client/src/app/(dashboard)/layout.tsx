@@ -1,4 +1,5 @@
 "use client";
+
 import Navbar from "@/components/Navbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Sidebar from "@/components/AppSidebar";
@@ -12,9 +13,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
-  console.log("Ladyout dashboard")
 
-//Aseguramos que no ingresen a paginas que no corresponden a su rol
   useEffect(() => {
     if (authUser) {
       const userRole = authUser.userRole?.toLowerCase();
