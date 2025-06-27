@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 
 export const getTenant  = async(req: Request, res: Response): Promise<void>=>{
     try{
-        console.log("ENTRANDO A GET TENANT")
         const {cognitoId} = req.params;
         console.log(`CognitoId: ${cognitoId}`)
         const tenant = await prisma.tenant.findUnique({

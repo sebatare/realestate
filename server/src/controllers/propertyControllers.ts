@@ -140,9 +140,15 @@ export const getProperties = async (
       }
     `;
 
-    const properties = await prisma.$queryRaw(completeQuery);
+    const properties = await prisma.$queryRaw<any[]>(completeQuery);
+    if (!properties || properties.length === 0) {
+      res.status(404).json({ message: "No properties found matching the criteria." });
+      return;
+    }
 
     res.json(properties);
+
+
   } catch (error: any) {
     res
       .status(500)
@@ -224,6 +230,7 @@ export const createProperty = async (
         return uploadResult.Location;
       })
     );
+    console.log("Photo URLs:", photoUrls);
 
     //Esta api permite transformar los puntos del mapa a latitud y longitud y poder guardarlo en la base de datos
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
@@ -255,9 +262,10 @@ export const createProperty = async (
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
-
+    console.log("Location created:", location);
     // create property
     const newProperty = await prisma.property.create({
+      
       data: {
         ...propertyData,
         photoUrls,
@@ -288,6 +296,7 @@ export const createProperty = async (
 
     res.status(201).json(newProperty);
   } catch (err: any) {
+  console.log("Error creating property:", err);
     res
       .status(500)
       .json({ message: `Error creating property: ${err.message}` });
