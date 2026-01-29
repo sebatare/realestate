@@ -2,16 +2,19 @@
 
 import StoreProvider from "@/state/redux";
 import { Authenticator } from "@aws-amplify/ui-react";
-import Auth from "./(auth)/authProvider"
+import Auth from "./(auth)/authProvider";
+import { AuthUserProvider } from "@/context/AuthContext";
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <StoreProvider>
       <Authenticator.Provider>
-      <Auth>{children}</Auth>
+        <AuthUserProvider>
+          <Auth>{children}</Auth>
+        </AuthUserProvider>
       </Authenticator.Provider>
     </StoreProvider>
   );
-}
+};
 
 export default Providers;

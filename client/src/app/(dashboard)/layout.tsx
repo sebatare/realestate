@@ -5,11 +5,11 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import Sidebar from "@/components/AppSidebar";
 import { NAVBAR_HEIGHT } from "@/lib/constants";
 import React, { useEffect, useState } from "react";
-import { useGetAuthUserQuery } from "@/state/api";
+import { useAuthUser } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
+  const { data: authUser, isLoading: authLoading } = useAuthUser();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +25,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           userRole === "manager"
             ? "/managers/properties"
             : "/tenants/favorites",
-          { scroll: false }
+          { scroll: false },
         );
       } else {
         setIsLoading(false);

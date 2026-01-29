@@ -72,8 +72,14 @@ export const getManagerProperties = async (
 ): Promise<void> => {
   try {
     const { cognitoId } = req.params;
+    
+    if (!cognitoId || cognitoId.trim() === "") {
+      res.status(400).json({ message: "Invalid cognitoId" });
+      return;
+    }
+
     const properties = await prisma.property.findMany({
-    where: { managerCognitoId: cognitoId },
+      where: { managerCognitoId: cognitoId },
       include: {
         location: true,
       },
@@ -103,6 +109,7 @@ export const getManagerProperties = async (
 
     res.json(propertiesWithFormattedLocation);
   } catch (err: any) {
+    console.error("Error retrieving manager properties:", err);
     res
       .status(500)
       .json({ message: `Error retrieving manager properties: ${err.message}` });

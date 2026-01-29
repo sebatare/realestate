@@ -1,28 +1,35 @@
 "use client";
 import Navbar from "@/components/Navbar";
 import { NAVBAR_HEIGHT } from "@/lib/constants";
-import { useGetAuthUserQuery } from "@/state/api";
+import { useAuthUser } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
+  const { data: authUser, isLoading: authLoading } = useAuthUser();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
+    if (authLoading) return;
+
     if (authUser) {
       const userRole = authUser.userRole?.toLowerCase();
-      if (
-        (userRole === "manager" && pathname.startsWith("/search")) ||
-        (userRole === "manager" && pathname === "/")
-      ) {
+      if (userRole === "manager" && pathname.startsWith("/search")) {
+        // Redirigir managers a su dashboard sin esperar más
         router.push("/managers/properties", { scroll: false });
-      } else {
-        setIsLoading(false);
+        return;
+      }
+      if (userRole === "manager" && pathname === "/") {
+        router.push("/managers/properties", { scroll: false });
+        return;
       }
     }
-  }, [authUser, router, pathname]);
+
+    // Solo para tenants o usuarios sin autenticación
+    setIsLoading(false);
+  }, [authUser, authLoading, router, pathname]);
 
   if (authLoading || isLoading) return <>Loading...</>;
 

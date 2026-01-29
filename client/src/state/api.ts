@@ -11,15 +11,48 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { FiltersState } from ".";
 
+// Cache para evitar múltiples llamadas a fetchAuthSession
+let cachedToken: string | null = null;
+let tokenRefreshPromise: Promise<void> | null = null;
+
+// Función para refrescar el token en background
+const refreshTokenInBackground = async () => {
+  if (tokenRefreshPromise) return tokenRefreshPromise;
+  
+  tokenRefreshPromise = fetchAuthSession()
+    .then((session) => {
+      const { idToken } = session.tokens ?? {};
+      if (idToken?.toString()) {
+        cachedToken = idToken.toString();
+      }
+    })
+    .catch(() => {
+      // Silently fail, use cached token if available
+    })
+    .finally(() => {
+      tokenRefreshPromise = null;
+    });
+
+  return tokenRefreshPromise;
+};
+
+// Inicializar token al cargar
+refreshTokenInBackground();
+
 export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    prepareHeaders: async (headers) => {
-      const session = await fetchAuthSession();
-      const { idToken } = session.tokens ?? {};
-      if (idToken) {
-        headers.set("Authorization", `Bearer ${idToken}`);
+    prepareHeaders: (headers) => {
+      // Usar token cacheado (síncrono)
+      if (cachedToken) {
+        headers.set("Authorization", `Bearer ${cachedToken}`);
       }
+      
+      // Refrescar token en background (no bloquea requests)
+      refreshTokenInBackground().catch(() => {
+        // Ignore errors
+      });
+      
       return headers;
     },
   }),
