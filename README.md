@@ -100,29 +100,103 @@ Access the application at: **http://localhost:3001**
 
 ## 🧪 Test Accounts
 
-The `seed:simple` command creates two test accounts for development:
+The `seed:simple` command creates test accounts with local passwords for development:
 
-### Manager Account
+### ⚠️ Important: Dual Authentication System
+
+The application supports **two authentication modes**:
+
+1. **Development Mode** (Local Authentication)
+   - Uses email/password stored in PostgreSQL (bcrypt hashed)
+   - Access via login page at `/login`
+   - No AWS Cognito required
+
+2. **Production Mode** (AWS Cognito)
+   - Uses AWS Cognito for authentication
+   - Configured via environment variables
+   - Supports custom:role attribute for role-based access
+
+### Manager Accounts
 
 ```
-Email: manager@test.com
-Name: John Manager
-Cognito ID: manager-test-001
+1. John Manager
+   Email: manager@test.com
+   Password: password123
+
+2. Sarah Properties
+   Email: sarah@test.com
+   Password: password456
 ```
 
 **Access**: Manager dashboard at `/managers/properties`
 
-### Tenant Account
+### Tenant Accounts
 
 ```
-Email: tenant@test.com
-Name: Jane Tenant
-Cognito ID: tenant-test-001
+1. Jane Tenant
+   Email: tenant@test.com
+   Password: password789
+
+2. Mike Renter
+   Email: mike@test.com
+   Password: password101112
+
+3. Lisa Apartment
+   Email: lisa@test.com
+   Password: password131415
 ```
 
 **Access**: Property search at `/search` and favorites at `/tenants/favorites`
 
-**Note**: In production, use real AWS Cognito authentication. These test accounts are for local development only.
+### Test Data Created
+
+The seed automatically creates:
+
+- **3 Locations**: Los Angeles, Santa Monica, Beverly Hills
+- **4 Properties**: Apartment, Villa, Studio, Townhouse with detailed information
+- **3 Active Leases**: With various tenants and rental terms
+- **3 Applications**: Demonstrating different statuses (approved, pending, rejected)
+- **4 Payments**: Showing paid and overdue payment statuses
+- **Favorites**: Pre-added tenant favorite properties
+
+---
+
+## 🔐 Authentication Setup
+
+### Using Local Authentication (Development)
+
+The platform now supports **local authentication** for development without AWS Cognito:
+
+1. **Login Page**: Navigate to `/login`
+2. **Sign In**: Use any of the test account credentials from above
+3. **Sign Up**: Create new test accounts with email/password
+4. **Roles**: Select "Tenant" or "Property Manager" during registration
+
+**How It Works**:
+
+- Passwords are hashed with bcrypt (10 rounds)
+- JWT tokens are generated locally and stored in localStorage
+- Token includes user role for role-based access control
+- No AWS Cognito configuration required
+
+### For Production with AWS Cognito
+
+To switch to AWS Cognito authentication in production:
+
+1. **Environment Variables**:
+   - Set `NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID`
+   - Set `NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID`
+
+2. **Backend Middleware**: The auth middleware automatically detects Cognito tokens and falls back to local JWT verification if needed
+
+3. **Expected Cognito Attributes**:
+
+   ```
+   email: test user email
+   name: test user name
+   phone_number: user phone
+   custom:role: "manager" or "tenant"
+   ```
 
 ---
 
@@ -133,10 +207,12 @@ realestate/
 ├── client/                          # Next.js frontend
 │   ├── src/
 │   │   ├── app/                     # Next.js app router
+│   │   │   ├── (auth)/              # Auth routes (login, register)
+│   │   │   ├── (dashboard)/         # Protected dashboard routes
+│   │   │   └── (nondashboard)/      # Public routes
 │   │   ├── components/              # React components
-│   │   ├── context/                 # React context (auth state)
 │   │   ├── state/                   # Redux Toolkit + RTK Query
-│   │   ├── lib/                     # Utilities and schemas
+│   │   ├── lib/                     # Utilities and validation schemas
 │   │   └── types/                   # TypeScript definitions
 │   └── .env                         # Frontend environment variables
 │
@@ -144,13 +220,15 @@ realestate/
 │   ├── src/
 │   │   ├── index.ts                 # Server entry point
 │   │   ├── controllers/             # Business logic
+│   │   │   └── authControllers.ts   # Auth logic (register, login)
 │   │   ├── routes/                  # API routes
+│   │   │   └── authRoutes.ts        # Auth endpoints
 │   │   ├── middleware/              # Auth & other middleware
 │   │   └── types/                   # TypeScript definitions
 │   ├── prisma/
 │   │   ├── schema.prisma            # Database schema
 │   │   ├── seed.ts                  # Full database seed
-│   │   └── seed-simple.ts           # Minimal seed (2 test users)
+│   │   └── seed-simple.ts           # Minimal seed with test users
 │   └── .env                         # Backend environment variables
 │
 └── README.md                        # This file
@@ -166,7 +244,8 @@ realestate/
 npm run dev           # Start development server with hot reload
 npm run build         # Compile TypeScript to JavaScript
 npm run start         # Run compiled server
-npm run seed          # Seed database with full test data
+npm run seed:simple   # Seed database with test users and data
+npm run prisma:generate # Generate Prisma types for frontend
 npm run seed:simple   # Seed database with minimal test data (2 users)
 ```
 

@@ -99,8 +99,11 @@ model Manager {
   id          Int    @id @default(autoincrement())
   cognitoId   String @unique
   name        String
-  email       String
+  email       String @unique
   phoneNumber String
+  password    String? // For local auth (hashed with bcrypt)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   managedProperties Property[]
 }
@@ -109,8 +112,11 @@ model Tenant {
   id          Int    @id @default(autoincrement())
   cognitoId   String @unique
   name        String
-  email       String
+  email       String @unique
   phoneNumber String
+  password    String? // For local auth (hashed with bcrypt)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   properties   Property[]    @relation("TenantProperties")
   favorites    Property[]    @relation("TenantFavorites")

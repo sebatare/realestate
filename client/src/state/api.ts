@@ -43,15 +43,23 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     prepareHeaders: (headers) => {
-      // Usar token cacheado (síncrono)
-      if (cachedToken) {
+      // Check for local auth token first (for development)
+      const localToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      
+      if (localToken) {
+        // Use local token for development
+        headers.set("Authorization", `Bearer ${localToken}`);
+      } else if (cachedToken) {
+        // Fall back to Cognito token for production
         headers.set("Authorization", `Bearer ${cachedToken}`);
       }
       
       // Refrescar token en background (no bloquea requests)
-      refreshTokenInBackground().catch(() => {
-        // Ignore errors
-      });
+      if (!localToken) {
+        refreshTokenInBackground().catch(() => {
+          // Ignore errors
+        });
+      }
       
       return headers;
     },
