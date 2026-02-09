@@ -78,6 +78,32 @@ export const api = createApi({
     getAuthUser: build.query<User, void>({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
         try {
+          // Check for local auth token first
+          const localUser = localStorage.getItem("user");
+          const localToken = localStorage.getItem("token");
+
+          if (localUser && localToken) {
+            // Using local authentication
+            const user = JSON.parse(localUser);
+            const endpoint =
+              user.role === "manager" ? `/managers/${user.id}` : `/tenants/${user.id}`;
+
+            const userDetailsResponse = await fetchWithBQ(endpoint);
+
+            if (userDetailsResponse.error) {
+              return { error: "Failed to fetch user details" };
+            }
+
+            return {
+              data: {
+                cognitoInfo: user,
+                userInfo: userDetailsResponse.data as Tenant | Manager,
+                userRole: user.role,
+              },
+            };
+          }
+
+          // Fall back to Cognito authentication
           const session = await fetchAuthSession();
           const { idToken } = session.tokens ?? {};
           const user = await getCurrentUser();
@@ -89,9 +115,7 @@ export const api = createApi({
 
           let userDetailsResponse = await fetchWithBQ(endpoint);
 
-
           // if user doesn't exist, create new user
-
           if (
             userDetailsResponse.error &&
             userDetailsResponse.error.status === 404
@@ -103,7 +127,6 @@ export const api = createApi({
               fetchWithBQ
             );
           }
-        
 
           return {
             data: {
@@ -113,7 +136,7 @@ export const api = createApi({
             },
           };
         } catch (error: any) {
-          console.error(error.message)
+          console.error(error.message);
           return { error: error.message || "Could not fetch user data" };
         }
       },
